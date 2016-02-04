@@ -36,8 +36,8 @@ func handleUnknown(conn net.Conn) {
 		Status: gomemcached.UNKNOWN_COMMAND,
 		Opaque: 0,
 		Cas:    0,
-		Extras: []byte(""),
-		Key:    []byte(""),
+		Extras: []byte{},
+		Key:    []byte{},
 	}
 
 	conn.Write(res.Bytes())
@@ -77,7 +77,6 @@ func handleGet(req gomemcached.MCRequest, conn net.Conn) {
 	rwmutex.RLock()
 	val := kvmap[key]
 
-	//flags := []byte{0xde, 0xad, 0xbe, 0xef}
 	flags := []byte{0x00, 0x00, 0x00, 0x00}
 	var res gomemcached.MCResponse
 	if val != "" {
@@ -85,7 +84,7 @@ func handleGet(req gomemcached.MCRequest, conn net.Conn) {
 			Opcode: gomemcached.GET,
 			Status: gomemcached.SUCCESS,
 			Opaque: 0,
-			Cas:    1,
+			Cas:    0,
 			Extras: []byte(flags),
 			Key:    []byte{},
 			Body:   []byte(val),
@@ -101,7 +100,7 @@ func handleGet(req gomemcached.MCRequest, conn net.Conn) {
 			Body:   []byte("Not found"),
 		}
 	}
-	fmt.Println(res.String())
+
 	conn.Write(res.Bytes())
 	rwmutex.RUnlock()
 
@@ -129,7 +128,6 @@ func handleRequest(conn net.Conn) {
 		handleUnknown(conn)
 	}
 
-	fmt.Println(req)
 }
 
 // --------------------------------------------------------------------------
