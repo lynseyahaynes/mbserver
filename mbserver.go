@@ -30,7 +30,7 @@ func checkError(err error) {
 
 // Send an error response to the connection and close it
 func handleUnknown(conn net.Conn) {
-	fmt.Println("received unknown message!")
+
 	res := gomemcached.MCResponse{
 		Opcode: gomemcached.NOOP,
 		Status: gomemcached.UNKNOWN_COMMAND,
@@ -46,42 +46,48 @@ func handleUnknown(conn net.Conn) {
 
 // --------------------------------------------------------------------------
 
+// Set the requested key to the requested value and respond with success
 func handleSet(req gomemcached.MCRequest, conn net.Conn) {
-	rwmutex.Lock()
-	fmt.Println("inside the write lock!")
 	key := string(req.Key[:len(req.Key)])
 	val := string(req.Body[:len(req.Body)])
+
+	rwmutex.Lock()
 	kvmap[key] = val
+
 	res := gomemcached.MCResponse{
 		Opcode: gomemcached.SET,
 		Status: gomemcached.SUCCESS,
 		Opaque: 0,
 		Cas:    0,
-		Extras: []byte{0},
-		Key:    req.Key,
-		Body:   []byte{0},
+		Extras: []byte{},
+		Key:    []byte{},
+		Body:   []byte{},
 	}
 	conn.Write(res.Bytes())
 	rwmutex.Unlock()
 
+	conn.Close()
 }
 
 // --------------------------------------------------------------------------
 
 func handleGet(req gomemcached.MCRequest, conn net.Conn) {
-	rwmutex.RLock()
 	key := string(req.Key[:len(req.Key)])
+
+	rwmutex.RLock()
 	val := kvmap[key]
 
+	//flags := []byte{0xde, 0xad, 0xbe, 0xef}
+	flags := []byte{0x00, 0x00, 0x00, 0x00}
 	var res gomemcached.MCResponse
 	if val != "" {
 		res = gomemcached.MCResponse{
 			Opcode: gomemcached.GET,
 			Status: gomemcached.SUCCESS,
 			Opaque: 0,
-			Cas:    0,
-			Extras: []byte{0},
-			Key:    req.Key,
+			Cas:    1,
+			Extras: []byte(flags),
+			Key:    []byte{},
 			Body:   []byte(val),
 		}
 	} else {
@@ -90,14 +96,16 @@ func handleGet(req gomemcached.MCRequest, conn net.Conn) {
 			Status: gomemcached.KEY_ENOENT,
 			Opaque: 0,
 			Cas:    0,
-			Extras: []byte{0},
-			Key:    req.Key,
+			Extras: []byte{},
+			Key:    []byte{},
 			Body:   []byte("Not found"),
 		}
 	}
+	fmt.Println(res.String())
 	conn.Write(res.Bytes())
-
 	rwmutex.RUnlock()
+
+	conn.Close()
 }
 
 // --------------------------------------------------------------------------
@@ -109,6 +117,8 @@ func handleRequest(conn net.Conn) {
 	_, err := req.Receive(bufio.NewReader(conn), nil)
 	if err != nil {
 		fmt.Println("Error receiving message:", err.Error())
+		conn.Close()
+		return
 	}
 
 	if req.Opcode == gomemcached.GET {
