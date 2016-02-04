@@ -109,7 +109,7 @@ func client() {
 	sendUnknownCommand()
 	sendMalformedCommand()
 	sendSet("lynsey", "hello, what a wonderful world!")
-	sendGet("this_key_has_taken_its_toll_on_me")
+	sendGet("lynsey")
 	sendSet("lynsey", "oh hello, oh world!")
 	sendGet("lynsey")
 	wg.Done()
@@ -117,11 +117,14 @@ func client() {
 
 func main() {
 
-	// Allocated 8K->8K+numClients ports for running the clients.
+	//
 	numClients := 1
 
 	wg.Add(numClients)
-	client()
+
+	for i := 0; i < numClients; i++ {
+		client()
+	}
 
 	fmt.Fprintf(os.Stderr, "Waiting for clients...\n")
 	wg.Wait()

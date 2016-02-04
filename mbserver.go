@@ -71,6 +71,7 @@ func handleSet(req gomemcached.MCRequest, conn net.Conn) {
 
 // --------------------------------------------------------------------------
 
+// handle GET request. if value is there, return value, otherwise 'not found'
 func handleGet(req gomemcached.MCRequest, conn net.Conn) {
 	key := string(req.Key[:len(req.Key)])
 
@@ -115,7 +116,6 @@ func handleRequest(conn net.Conn) {
 	req := gomemcached.MCRequest{}
 	_, err := req.Receive(bufio.NewReader(conn), nil)
 	if err != nil {
-		fmt.Println("Error receiving message:", err.Error())
 		conn.Close()
 		return
 	}
