@@ -60,17 +60,17 @@ func constructPacket(opcode uint8, extras []byte, status uint8, body []byte) []b
 	binary.BigEndian.PutUint32(bodylen, uint32(len(body)+len(extras)))
 	fmt.Println(string(body))
 
-	if extralen > 0 && extras[3] == 2 { // python memcached library expects integer
-		binary.BigEndian.PutUint32(bodylen, uint32(len(extras)+8))
-		for len(body) < 8 {
-			body = append([]byte{0}, body...)
+	// if extralen > 0 && extras[3] == 2 { // python memcached library expects integer
+	// 	binary.BigEndian.PutUint32(bodylen, uint32(len(extras)+8))
+	// 	for len(body) < 8 {
+	// 		body = append([]byte{0}, body...)
 
-		}
-		fmt.Println("Val = ", string(body))
-		fmt.Println("Val = ", body)
-		fmt.Println("Val = ", binary.BigEndian.Uint32(body))
-		fmt.Println("BodyLength = ", bodylen)
-	}
+	// 	}
+	// 	fmt.Println("Val = ", string(body))
+	// 	fmt.Println("Val = ", body)
+	// 	fmt.Println("Val = ", binary.BigEndian.Uint32(body))
+	// 	fmt.Println("BodyLength = ", bodylen)
+	// }
 
 	msg := append(magic, []byte{opcode}...)
 	msg = append(msg, keylen...)
@@ -83,7 +83,10 @@ func constructPacket(opcode uint8, extras []byte, status uint8, body []byte) []b
 	msg = append(msg, extras...)
 	msg = append(msg, body...)
 
-	fmt.Println(msg)
+	fmt.Println("Body length = ", binary.BigEndian.Uint32(bodylen), "body's actual length = ", len(body))
+	fmt.Println("Extras length = ", extralen, " extras actual length= ", len(extras))
+	fmt.Println("Message length = ", len(msg))
+	//fmt.Println(msg)
 
 	return msg
 }
@@ -134,7 +137,8 @@ func handleSet(header []byte, conn *net.TCPConn) {
 		body = append(body, rest...)
 	}
 
-	extras := body[:extralen]
+	fmt.Println("Extra Len:", extralen)
+	extras := body[:extralen-4]
 	key := string(body[extralen:(keylen + uint16(extralen))])
 	fmt.Println("key = ", key)
 	fmt.Println("extras = ", extras)
