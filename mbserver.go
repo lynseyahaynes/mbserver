@@ -165,7 +165,10 @@ func handleRequest(conn *net.TCPConn) {
 
 	header := make([]byte, 24)
 	conn.SetReadBuffer(24)
-	n, _ = conn.Read(header)
+	n, err := conn.Read(header)
+	if err != nil || n != 24 {
+		return
+	}
 
 	magic := header[0]
 	if magic != REQUEST || n < HEADER_SIZE {
