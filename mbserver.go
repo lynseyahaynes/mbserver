@@ -155,23 +155,17 @@ func handleGet(header []byte, conn *net.TCPConn) {
 	}
 	conn.Write(msg)
 	rwmutex.RUnlock()
-	// ===============
 
-	conn.Close()
 }
 
 // --------------------------------------------------------------------------
 
 // Handles incoming GET, SET, and UNKNOWN requests based on the packet header.
 func handleRequest(conn *net.TCPConn) {
-	defer conn.Close()
 
 	header := make([]byte, 24)
 	conn.SetReadBuffer(24)
-	n, err := conn.Read(header)
-	if err != nil {
-		return
-	}
+	n, _ = conn.Read(header)
 
 	magic := header[0]
 	if magic != REQUEST || n < HEADER_SIZE {
@@ -191,17 +185,25 @@ func handleRequest(conn *net.TCPConn) {
 
 // --------------------------------------------------------------------------
 
+func handleRequests(conn *net.TCPConn) {
+	defer conn.Close()
+	for {
+		handleRequest(conn)
+	}
+}
+
+// --------------------------------------------------------------------------
+
 //Listens for connections from possibly concurrent clients
 func listenForConnections(addr string) {
 	tcpaddr, _ := net.ResolveTCPAddr("tcp", addr)
 	server, err := net.ListenTCP("tcp", tcpaddr)
 	checkError(err)
-	defer server.Close()
 
 	for {
 		conn, err := server.AcceptTCP()
 		checkError(err)
-		go handleRequest(conn)
+		go handleRequests(conn)
 	}
 }
 

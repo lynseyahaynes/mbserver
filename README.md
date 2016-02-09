@@ -7,11 +7,7 @@ I've written it in go, so in order to run it, you'll need to have go downloaded 
 
 go run mbserver.go <IP>:<PORT>
 
-You will need to set your GOPATH environment variable to your workspace, and you will need to run:
-
-go get github.com/dustin/gomemcached
-
-in order to get the external library I used (and make sure that it is reachable by your GOPATH).
+You will need to set your GOPATH environment variable to your workspace.
 
 Performance
 ----------------
